@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use std::fs::File;
 use bcrypt::{hash, verify};
 
-fn get_master_password_file_path() -> String {
+fn get_base_file_path() -> String {
     let is_windows = cfg!(windows);
 
-    let mut path_buf = match env::var("APPDATA").ok() {
+    let path_buf = match env::var("APPDATA").ok() {
         Some(appdata) if is_windows => {
             let mut path = PathBuf::from(appdata);
             path.push("muffon_encryptor");
@@ -26,6 +26,13 @@ fn get_master_password_file_path() -> String {
     if !path_buf.exists() {
         std::fs::create_dir_all(&path_buf).expect("Failed to create directory");
     }
+
+    path_buf.to_string_lossy().into_owned()
+}
+
+fn get_master_password_file_path() -> String {
+    
+    let mut path_buf = PathBuf::from(get_base_file_path());
 
     // Add "master_password.txt" to the path
     path_buf.push("hash.muf");
@@ -39,25 +46,8 @@ fn get_master_password_file_path() -> String {
 }
 
 fn get_passwords_file_path() -> String {
-    let is_windows = cfg!(windows);
-
-    let mut path_buf = match env::var("APPDATA").ok() {
-        Some(appdata) if is_windows => {
-            let mut path = PathBuf::from(appdata);
-            path.push("muffon_encryptor");
-            path
-        }
-        _ => {
-            let mut home = env::var("HOME").expect("HOME environment variable not found");
-            home.push_str("/.config/muffon_encryptor");
-            PathBuf::from(home)
-        }
-    };
-
-    // Check if folder exists and create it if it doesn't
-    if !path_buf.exists() {
-        std::fs::create_dir_all(&path_buf).expect("Failed to create directory");
-    }
+    
+    let mut path_buf = PathBuf::from(get_base_file_path());
 
     // Add "master_password.txt" to the path
     path_buf.push("pws.muf");
