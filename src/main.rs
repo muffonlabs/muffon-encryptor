@@ -1,6 +1,6 @@
 use std::io;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs::File;
 
 fn get_master_password_file_path() -> String {
