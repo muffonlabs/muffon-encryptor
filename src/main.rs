@@ -1,5 +1,6 @@
+mod modules;
+use modules::bcrypt_mods::{encrypt_master_password, verify_master_password};
 use std::{io, env, io::Read, io::Write, path::{Path, PathBuf}, fs::File};
-use bcrypt::{hash, verify};
 
 fn get_base_file_path() -> String {
     let is_windows = cfg!(windows);
@@ -122,13 +123,7 @@ fn reset_master_password() {
     // TODO: decrypt all the passwords using the old master password and encrypt them using the new one
 }
 
-fn encrypt_master_password(master_password: &str) -> String {
-    hash(master_password.as_bytes(), 12).unwrap()
-}
 
-fn verify_master_password(password: &str, hashed: &str) -> bool {
-    verify(password.as_bytes(), &hashed).unwrap()
-}
 
 #[tokio::main]
 async fn main() {
