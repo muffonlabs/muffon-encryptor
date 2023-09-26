@@ -1,9 +1,4 @@
-use std::io;
-use std::env;
-use std::io::Read;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::fs::File;
+use std::{io, env, io::Read, io::Write, path::{Path, PathBuf}, fs::File};
 use bcrypt::{hash, verify};
 
 fn get_base_file_path() -> String {
