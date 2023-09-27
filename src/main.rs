@@ -4,9 +4,12 @@ use modules::{
         encrypt_master_password,
         verify_master_password
     },
-    file_path_mods::{get_base_file_path, get_master_password_file_path, get_passwords_file_path}
+    file_path_mods::{
+        get_master_password_file_path,
+        get_passwords_file_path
+    }
 };
-use std::{io, env, io::Read, io::Write, path::{Path, PathBuf}, fs::File};
+use std::{io, env, io::Read, io::Write, path::Path, fs::File};
 
 fn delete_password_files() -> Result<(), std::io::Error> {
     let passwords_path = get_passwords_file_path();
