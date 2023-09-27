@@ -10,3 +10,4 @@ tokio = { version = "1", features = ["full"] }
 bcrypt = "0.14.0"
 env_logger = "0.10.0"
 log = "0.4.20"
+directories = "5.0.1"

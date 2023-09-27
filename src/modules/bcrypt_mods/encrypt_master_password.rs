@@ -1,4 +1,3 @@
-
 use bcrypt::hash;
 
 pub fn encrypt_master_password(master_password: &str) -> String {

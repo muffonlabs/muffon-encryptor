@@ -1,60 +1,12 @@
 mod modules;
-use modules::bcrypt_mods::{encrypt_master_password, verify_master_password};
+use modules::{
+    bcrypt_mods::{
+        encrypt_master_password,
+        verify_master_password
+    },
+    file_path_mods::{get_base_file_path, get_master_password_file_path, get_passwords_file_path}
+};
 use std::{io, env, io::Read, io::Write, path::{Path, PathBuf}, fs::File};
-
-fn get_base_file_path() -> String {
-    let is_windows = cfg!(windows);
-
-    let path_buf = match env::var("APPDATA").ok() {
-        Some(appdata) if is_windows => {
-            let mut path = PathBuf::from(appdata);
-            path.push("muffon_encryptor");
-            path
-        }
-        _ => {
-            let mut home = env::var("HOME").expect("HOME environment variable not found");
-            home.push_str("/.config/muffon_encryptor");
-            PathBuf::from(home)
-        }
-    };
-
-    // Check if folder exists and create it if it doesn't
-    if !path_buf.exists() {
-        std::fs::create_dir_all(&path_buf).expect("Failed to create directory");
-    }
-
-    path_buf.to_string_lossy().into_owned()
-}
-
-fn get_master_password_file_path() -> String {
-    
-    let mut path_buf = PathBuf::from(get_base_file_path());
-
-    // Add "master_password.txt" to the path
-    path_buf.push("hash.muf");
-
-    // Create the file if it doesn't exist
-    if !path_buf.exists() {
-        File::create(&path_buf).expect("Failed to create file");
-    }
-
-    path_buf.to_string_lossy().into_owned()
-}
-
-fn get_passwords_file_path() -> String {
-    
-    let mut path_buf = PathBuf::from(get_base_file_path());
-
-    // Add "master_password.txt" to the path
-    path_buf.push("pws.muf");
-
-    // Create the file if it doesn't exist
-    if !path_buf.exists() {
-        File::create(&path_buf).expect("Failed to create file");
-    }
-
-    path_buf.to_string_lossy().into_owned()
-}
 
 fn delete_password_files() -> Result<(), std::io::Error> {
     let passwords_path = get_passwords_file_path();
