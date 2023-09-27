@@ -8,8 +8,6 @@ pub fn get_base_file_path() -> String {
     ? Commented and not removed for legacy purposes
      let is_windows = cfg!(windows);
      let path_buf = match env::var("APPDATA").ok() {
-
-
          Some(appdata) if is_windows => {
              let mut path = PathBuf::from(appdata);
              path.push("muffon_encryptor");
@@ -20,7 +18,8 @@ pub fn get_base_file_path() -> String {
              home.push_str("/.config/muffon_encryptor");
              PathBuf::from(home)
          }
-     }; */
+     }; 
+     */
 
     let path_buf: PathBuf = match ProjectDirs::from("com", "Muffon Labs", "Muffon-Encryptor") {
         Some(proj_dirs) => {
