@@ -30,8 +30,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 
 This project and everyone participating in it is governed by the
 [muffon-encryptor Code of Conduct](https://github.com/muffon-dev/muffon-encryptor/blob/master/CODE_OF_CONDUCT.md).
-By participating, you are expected to uphold this code. Please report unacceptable behavior
-to <>.
+By participating, you are expected to uphold this code. Please report unacceptable behavior.
 
 
 ## I Have a Question
@@ -134,25 +133,14 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/muffon
 <!-- You might want to create an issue template for enhancement suggestions that can be used as a guide and that defines the structure of the information to be included. If you do so, reference it here in the description. -->
 
 ### Your First Code Contribution
-<!-- TODO
-include Setup of env, IDE and typical getting started instructions?
-
--->
-
-### Improving The Documentation
-<!-- TODO
-Updating, improving and correcting the documentation
-
--->
+Prerequisites:
+- rust + cargo installed
+- some code editor
+- rust skills
 
 ## Styleguides
 ### Commit Messages
-<!-- TODO
-
--->
-
-## Join The Project Team
-<!-- TODO -->
+Please choose the most descriptive name possible for what youve done and keep it as short as possible. I dont want commit messages like "(many) changes" or "finish" etc
 
 <!-- omit in toc -->
 ## Attribution
