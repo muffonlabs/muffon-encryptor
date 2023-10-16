@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use directories::ProjectDirs;
+use std::path::{Path, PathBuf};
 
 pub fn get_base_file_path() -> String {
     let path_buf: PathBuf = match ProjectDirs::from("com", "Muffon Labs", "Muffon-Encryptor") {

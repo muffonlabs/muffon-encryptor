@@ -1,7 +1,6 @@
 use crate::modules::file_path_mods::get_base_file_path;
 
-use std::{path::PathBuf, fs::File};
-
+use std::{fs::File, path::PathBuf};
 
 pub fn get_master_password_file_path() -> String {
     let mut path_buf = PathBuf::from(get_base_file_path());

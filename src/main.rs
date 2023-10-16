@@ -1,18 +1,18 @@
 mod modules;
-use aes_gcm::{Aes256Gcm, Key, aead::{OsRng, generic_array::GenericArray}, aead::Aead, AeadCore, KeyInit};
-use base64::{Engine as _, engine::general_purpose};
-use modules::{
-    bcrypt_mods::{
-        encrypt_master_password,
-        verify_master_password
-    },
-    file_path_mods::{
-        get_master_password_file_path,
-        get_passwords_file_path
-    }
+use aes_gcm::{
+    aead::Aead,
+    aead::{generic_array::GenericArray, OsRng},
+    AeadCore, Aes256Gcm, Key, KeyInit,
 };
-use std::{io, env, io::Read, io::Write, path::Path, fs::File, collections::HashMap, num::NonZeroU32};
+use base64::{engine::general_purpose, Engine as _};
+use modules::{
+    bcrypt_mods::{encrypt_master_password, verify_master_password},
+    file_path_mods::{get_master_password_file_path, get_passwords_file_path},
+};
 use ring::pbkdf2;
+use std::{
+    collections::HashMap, env, fs::File, io, io::Read, io::Write, num::NonZeroU32, path::Path,
+};
 
 const PBKDF2_ROUNDS: u32 = 100_000;
 const SALT_LEN: usize = 16;
@@ -44,7 +44,7 @@ fn is_master_password_set() -> bool {
         let mut file = File::open(&master_password_path).expect("file not found");
         let mut contents = String::new();
         file.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+            .expect("something went wrong reading the file");
         return !contents.is_empty();
     } else {
         delete_password_files().ok();
@@ -93,7 +93,8 @@ fn reset_master_password() {
         log::info!("Encrypting...");
         let hashed_password = encrypt_master_password(&new_password);
         let mut file = File::create(&master_password_path).expect("Unable to create file");
-        file.write_all(hashed_password.as_bytes()).expect("Unable to write data");
+        file.write_all(hashed_password.as_bytes())
+            .expect("Unable to write data");
         println!("Master password set successfully!");
     }
     if master_password_set {
@@ -105,7 +106,7 @@ fn reset_master_password() {
         let mut file = File::open(&passwords_path).expect("file not found");
         let mut contents = String::new();
         file.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+            .expect("something went wrong reading the file");
         let lines = contents.split("\n");
         // create a hashmap of passwords using the old master password
         let mut password_map: HashMap<String, Password> = HashMap::new();
@@ -122,25 +123,58 @@ fn reset_master_password() {
             let nonce = split.next().unwrap();
             let password = password.trim();
             let nonce = nonce.trim();
-            let password = general_purpose::STANDARD_NO_PAD.decode(password.as_bytes()).unwrap();
+            let password = general_purpose::STANDARD_NO_PAD
+                .decode(password.as_bytes())
+                .unwrap();
             let nonce = hex::decode(nonce).unwrap();
-            let encrypted_password = Block { data: password, nonce };
-            password_map.insert(identifier.to_string(), Password { id: id.parse::<u32>().unwrap(), username: username.to_string(), password: encrypted_password });
+            let encrypted_password = Block {
+                data: password,
+                nonce,
+            };
+            password_map.insert(
+                identifier.to_string(),
+                Password {
+                    id: id.parse::<u32>().unwrap(),
+                    username: username.to_string(),
+                    password: encrypted_password,
+                },
+            );
         }
         // decrypt and encrypt the passwords with the new master password
         let mut new_password_map: HashMap<String, Password> = HashMap::new();
         for (identifier, encrypted_password) in &password_map {
             let password = decrypt(encrypted_password.password.clone(), &key);
             let reencrypted_password = encrypt(&password, &new_key);
-            new_password_map.insert(identifier.to_string(), Password { id: encrypted_password.id, username: encrypted_password.username.clone(), password: reencrypted_password });
+            new_password_map.insert(
+                identifier.to_string(),
+                Password {
+                    id: encrypted_password.id,
+                    username: encrypted_password.username.clone(),
+                    password: reencrypted_password,
+                },
+            );
         }
         // overwrite the old passwords file with the new passwords
         let mut file = File::create(&passwords_path).expect("Unable to create file while migrating passwords");
         for (identifier, encrypted_password) in &new_password_map {
-            let enc_base64 = general_purpose::STANDARD_NO_PAD.encode(encrypted_password.password.data.as_slice());
-            let nonce_str = encrypted_password.password.nonce.iter().map(|b| format!("{:02x}", b)).collect::<String>(); // convert to hex string
-            let line = format!("{}: {}: {}: {}: {}\n", identifier, encrypted_password.id, encrypted_password.username, enc_base64, nonce_str);
-            file.write_all(line.as_bytes()).expect("Unable to write data while migrating passwords");
+            let enc_base64 = general_purpose::STANDARD_NO_PAD
+                .encode(encrypted_password.password.data.as_slice());
+            let nonce_str = encrypted_password
+                .password
+                .nonce
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>(); // convert to hex string
+            let line = format!(
+                "{}: {}: {}: {}: {}\n",
+                identifier,
+                encrypted_password.id,
+                encrypted_password.username,
+                enc_base64,
+                nonce_str
+            );
+            file.write_all(line.as_bytes())
+                .expect("Unable to write data while migrating passwords");
         }
         println!("Passwords migrated successfully!");
     }
@@ -149,13 +183,13 @@ fn reset_master_password() {
 #[derive(Clone)]
 struct Block {
     data: Vec<u8>,
-    nonce: Vec<u8>
+    nonce: Vec<u8>,
 }
 
 struct Password {
     id: u32,
     username: String,
-    password: Block
+    password: Block,
 }
 
 fn encrypt(data: &[u8], key_byte: &[u8]) -> Block {
@@ -166,7 +200,10 @@ fn encrypt(data: &[u8], key_byte: &[u8]) -> Block {
 
     let encrypted_data = match cipher.encrypt(&nonce, data) {
         Ok(encrpted) => {
-            let e = Block { data: encrpted, nonce:nonce.to_vec() };
+            let e = Block {
+                data: encrpted,
+                nonce: nonce.to_vec(),
+            };
             e
         }
         Err(err) => {
@@ -176,7 +213,7 @@ fn encrypt(data: &[u8], key_byte: &[u8]) -> Block {
     encrypted_data
 }
 
-fn decrypt(encrypted_data: Block,  password_byte: &[u8]) -> Vec<u8> {
+fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
     let key: &Key<Aes256Gcm> = password_byte.into();
     let nonce = encrypted_data.nonce;
     let data = encrypted_data.data;
@@ -238,12 +275,26 @@ fn start_menu() {
                 let passwords_path = get_passwords_file_path();
                 let mut file = File::create(&passwords_path).expect("Unable to create file");
                 for (identifier, encrypted_password) in &password_map {
-                    let enc_base64 = general_purpose::STANDARD_NO_PAD.encode(encrypted_password.password.data.as_slice());
-                    let nonce_str = encrypted_password.password.nonce.iter().map(|b| format!("{:02x}", b)).collect::<String>(); // convert to hex string
-                    let line = format!("{}: {}: {}: {}: {}\n", identifier, encrypted_password.id, encrypted_password.username, enc_base64, nonce_str);
-                    file.write_all(line.as_bytes()).expect("Unable to write data");
+                    let enc_base64 = general_purpose::STANDARD_NO_PAD
+                        .encode(encrypted_password.password.data.as_slice());
+                    let nonce_str = encrypted_password
+                        .password
+                        .nonce
+                        .iter()
+                        .map(|b| format!("{:02x}", b))
+                        .collect::<String>(); // convert to hex string
+                    let line = format!(
+                        "{}: {}: {}: {}: {}\n",
+                        identifier,
+                        encrypted_password.id,
+                        encrypted_password.username,
+                        enc_base64,
+                        nonce_str
+                    );
+                    file.write_all(line.as_bytes())
+                        .expect("Unable to write data");
                 }
-            },
+            }
             "1" => {
                 if password_map.is_empty() {
                     println!("No passwords found.\n");
@@ -259,44 +310,59 @@ fn start_menu() {
                         std::process::exit(0);
                     }));
                 }
-            },
+            }
             "2" => {
                 println!("Enter identifier:");
                 let mut identifier = String::new();
-                stdin.read_line(&mut identifier).expect("Failed to read identifier");
+                stdin
+                    .read_line(&mut identifier)
+                    .expect("Failed to read identifier");
                 let identifier = identifier.trim().to_string();
-            
+
                 println!("Enter username:");
                 let mut username = String::new();
-                stdin.read_line(&mut username).expect("Failed to read username");
+                stdin
+                    .read_line(&mut username)
+                    .expect("Failed to read username");
                 let username = username.trim().to_string();
 
                 println!("Enter password:");
                 let mut password = String::new();
-                stdin.read_line(&mut password).expect("Failed to read password");
+                stdin
+                    .read_line(&mut password)
+                    .expect("Failed to read password");
                 let password = password.trim().as_bytes().to_vec();
                 let encrypted_password = encrypt(&password, &key);
-                password_map.insert(identifier, Password { id: determine_id(&password_map), username, password: encrypted_password });
-            },
+                password_map.insert(
+                    identifier,
+                    Password {
+                        id: determine_id(&password_map),
+                        username,
+                        password: encrypted_password,
+                    },
+                );
+            }
             "3" => {
                 println!("Enter identifier to delete:");
                 let mut identifier = String::new();
-                stdin.read_line(&mut identifier).expect("Failed to read identifier");
+                stdin
+                    .read_line(&mut identifier)
+                    .expect("Failed to read identifier");
                 let identifier = identifier.trim().to_string();
-                
+
                 if password_map.remove(&identifier).is_some() {
                     println!("Deleted password for {}", identifier);
                 } else {
                     println!("No password found for {}", identifier);
                 }
-            },
+            }
             "4" => {
                 println!("Reading passwords from file...");
                 let passwords_path = get_passwords_file_path();
                 let mut file = File::open(&passwords_path).expect("file not found");
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)
-                .expect("something went wrong reading the file");
+                    .expect("something went wrong reading the file");
                 let lines = contents.split("\n");
                 for line in lines {
                     let line = line.trim();
@@ -311,16 +377,28 @@ fn start_menu() {
                     let nonce = split.next().unwrap();
                     let password = password.trim();
                     let nonce = nonce.trim();
-                    let password = general_purpose::STANDARD_NO_PAD.decode(password.as_bytes()).unwrap();
+                    let password = general_purpose::STANDARD_NO_PAD
+                        .decode(password.as_bytes())
+                        .unwrap();
                     let nonce = hex::decode(nonce).unwrap();
-                    let encrypted_password = Block { data: password, nonce };
-                    password_map.insert(identifier.to_string(), Password { id: id.parse::<u32>().unwrap(), username: username.to_string(), password: encrypted_password });
+                    let encrypted_password = Block {
+                        data: password,
+                        nonce,
+                    };
+                    password_map.insert(
+                        identifier.to_string(),
+                        Password {
+                            id: id.parse::<u32>().unwrap(),
+                            username: username.to_string(),
+                            password: encrypted_password,
+                        },
+                    );
                 }
-            },
+            }
             "5" => {
                 println!("Goodbye!");
                 return;
-            },
+            }
             _ => {
                 println!("Invalid option. Please try again.");
             }
