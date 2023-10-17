@@ -99,7 +99,7 @@ fn reset_master_password() {
     }
     if master_password_set {
         // decrypt all the passwords using the old master password and encrypt them using the new one
-        let salt: [u8; SALT_LEN] = [0; SALT_LEN]; // this is a constant salt for now
+        let salt: [u8; SALT_LEN] = [0; SALT_LEN]; // constant salt should be ok for now
         let key = derive_key(&old_master_password, &salt);
         let new_key = derive_key(&new_password, &salt);
         let passwords_path = get_passwords_file_path();
@@ -250,7 +250,7 @@ fn start_menu() {
     }
 
     // Using PBKDF2 to derive a key from the password
-    let salt: [u8; SALT_LEN] = [0; SALT_LEN]; // this is a constant salt for now
+    let salt: [u8; SALT_LEN] = [0; SALT_LEN]; // constant salt should be enough for now
     let key = derive_key(&input_master_password, &salt);
 
     let stdin = io::stdin();
