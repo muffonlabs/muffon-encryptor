@@ -37,6 +37,12 @@ fn delete_password_files() -> Result<(), std::io::Error> {
     Ok(())
 }
 
+fn password_error() {
+    delete_password_files().ok();
+    println!("Unsolicited change of master password detected. All passwords including the Masterpassword have been deleted. Please restart the program.");
+    std::process::exit(0);
+}
+
 fn is_master_password_set() -> bool {
     let master_password_path = get_master_password_file_path();
     if Path::new(&master_password_path).exists() {
@@ -219,11 +225,7 @@ fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
     let data = encrypted_data.data;
 
     let cipher = Aes256Gcm::new(&key);
-    let op = cipher.decrypt(GenericArray::from_slice(&nonce), data.as_slice()).unwrap_or_else(|_| {
-        delete_password_files().ok();
-        println!("Unsolicited change of master password detected. All passwords including the Masterpassword have been deleted. Please restart the program.");
-        std::process::exit(0);
-    });
+    let op = cipher.decrypt(GenericArray::from_slice(&nonce), data.as_slice()).unwrap_or_else(|_| {password_error(); vec![]});//TODO: GET THAT VECTOR AWAY SOME HOW PLS.
     op
 }
 
@@ -260,7 +262,7 @@ fn start_menu() {
     loop {
         println!("Welcome to Muffon Encryptor");
         println!("Please select an option:");
-        println!("0. List encrypted passwords and secrets");
+        println!("0. Save the passwords to file"); //changed to right message
         println!("1. List passwords and secrets");
         println!("2. Add a new password/secret");
         println!("3. Delete a password/secret");
@@ -307,7 +309,7 @@ fn start_menu() {
                     println!("{}({}): {} {}", identifier, encrypted_password.id, encrypted_password.username, String::from_utf8(password).unwrap_or_else(|_| {
                         delete_password_files().ok();
                         println!("Unsolicited change of master password detected. All passwords including the Masterpassword have been deleted. Please restart the program.");
-                        std::process::exit(0);
+                        std::process::exit(0)
                     }));
                 }
             }
@@ -370,11 +372,11 @@ fn start_menu() {
                         continue;
                     }
                     let mut split = line.split(": ");
-                    let identifier = split.next().unwrap();
-                    let id = split.next().unwrap();
-                    let username = split.next().unwrap();
-                    let password = split.next().unwrap();
-                    let nonce = split.next().unwrap();
+                    let identifier = split.next().unwrap_or_else(|| {  password_error();"2" }); //fixed the error where if the file was tamperd with the programm crashes.
+                    let id = split.next().unwrap_or_else(|| {  password_error();"2" }); //TODO: Better error handling this is quick and dirty fix.
+                    let username = split.next().unwrap_or_else(|| {  password_error();"2" }); // TODO: GET THAT 2 AWAY SOME HOW PLS.
+                    let password = split.next().unwrap_or_else(|| {  password_error();"2" });
+                    let nonce = split.next().unwrap_or_else(|| {  password_error();"2" });// now if file is tampered with it will be deleted
                     let password = password.trim();
                     let nonce = nonce.trim();
                     let password = general_purpose::STANDARD_NO_PAD
