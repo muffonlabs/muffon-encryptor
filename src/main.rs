@@ -166,11 +166,11 @@ fn get_passwords() -> HashMap<String, Password> {
             continue;
         }
         let mut split = line.split(": ");
-        let identifier = split.next().unwrap_or_else(|| {  password_error();"2" }); //fixed the error where if the file was tamperd with the programm crashes.
-        let id = split.next().unwrap_or_else(|| {  password_error();"2" }); //TODO: Better error handling this is quick and dirty fix.
-        let username = split.next().unwrap_or_else(|| {  password_error();"2" }); // TODO: GET THAT 2 AWAY SOME HOW PLS.
-        let password = split.next().unwrap_or_else(|| {  password_error();"2" });
-        let nonce = split.next().unwrap_or_else(|| {  password_error();"2" });// now if file is tampered with it will be deleted
+        let identifier = split.next().unwrap_or_else(|| {  password_error(); "Error" }); //fixed the error where if the file was tamperd with the programm crashes.
+        let id = split.next().unwrap_or_else(|| {  password_error(); "Error" });
+        let username = split.next().unwrap_or_else(|| {  password_error(); "Error" });
+        let password = split.next().unwrap_or_else(|| {  password_error(); "Error" });
+        let nonce = split.next().unwrap_or_else(|| {  password_error(); "Error" }); // now if file is tampered with it will be deleted
         let password = password.trim();
         let nonce = nonce.trim();
         let password = general_purpose::STANDARD_NO_PAD
@@ -313,11 +313,7 @@ fn start_menu() {
                 for (identifier, encrypted_password) in &password_map {
                     let password = decrypt(encrypted_password.password.clone(), &key);
                     // when there is a error in decrypting, the master password was unsolicitedly changed. in this case, delete all passwords and exit
-                    println!("{}({}): {} {}", identifier, encrypted_password.id, encrypted_password.username, String::from_utf8(password).unwrap_or_else(|_| {
-                        delete_password_files().ok();
-                        println!("Unsolicited change of master password detected. All passwords including the Masterpassword have been deleted. Please restart the program.");
-                        std::process::exit(0)
-                    }));
+                    println!("{}({}): {} {}", identifier, encrypted_password.id, encrypted_password.username, String::from_utf8(password).unwrap_or_else(|_| {password_error(); String::from("Error")}));
                 }
             }
             "2" => {
