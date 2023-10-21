@@ -5,13 +5,14 @@ use aes_gcm::{
     AeadCore, Aes256Gcm, Key, KeyInit,
 };
 use base64::{engine::general_purpose, Engine as _};
+use clap::{Arg, Command};
 use modules::{
     bcrypt_mods::{encrypt_master_password, verify_master_password},
     file_path_mods::{get_master_password_file_path, get_passwords_file_path},
 };
 use ring::pbkdf2;
 use std::{
-    collections::HashMap, env, fs::File, io, io::Read, io::Write, num::NonZeroU32, path::Path,
+    collections::HashMap, fs::File, io, io::Read, io::Write, num::NonZeroU32, path::Path,
 };
 
 const PBKDF2_ROUNDS: u32 = 100_000;
@@ -166,11 +167,26 @@ fn get_passwords() -> HashMap<String, Password> {
             continue;
         }
         let mut split = line.split(": ");
-        let identifier = split.next().unwrap_or_else(|| {  password_error(); "Error" }); //fixed the error where if the file was tamperd with the programm crashes.
-        let id = split.next().unwrap_or_else(|| {  password_error(); "Error" });
-        let username = split.next().unwrap_or_else(|| {  password_error(); "Error" });
-        let password = split.next().unwrap_or_else(|| {  password_error(); "Error" });
-        let nonce = split.next().unwrap_or_else(|| {  password_error(); "Error" }); // now if file is tampered with it will be deleted
+        let identifier = split.next().unwrap_or_else(|| {
+            password_error();
+            "Error"
+        }); //fixed the error where if the file was tamperd with the programm crashes.
+        let id = split.next().unwrap_or_else(|| {
+            password_error();
+            "Error"
+        });
+        let username = split.next().unwrap_or_else(|| {
+            password_error();
+            "Error"
+        });
+        let password = split.next().unwrap_or_else(|| {
+            password_error();
+            "Error"
+        });
+        let nonce = split.next().unwrap_or_else(|| {
+            password_error();
+            "Error"
+        }); // now if file is tampered with it will be deleted
         let password = password.trim();
         let nonce = nonce.trim();
         let password = general_purpose::STANDARD_NO_PAD
@@ -232,7 +248,12 @@ fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
     let data = encrypted_data.data;
 
     let cipher = Aes256Gcm::new(&key);
-    let op = cipher.decrypt(GenericArray::from_slice(&nonce), data.as_slice()).unwrap_or_else(|_| {password_error(); vec![]});//TODO: GET THAT VECTOR AWAY SOME HOW PLS.
+    let op = cipher
+        .decrypt(GenericArray::from_slice(&nonce), data.as_slice())
+        .unwrap_or_else(|_| {
+            password_error();
+            vec![]
+        }); //TODO: GET THAT VECTOR AWAY SOME HOW PLS.
     op
 }
 
@@ -313,7 +334,16 @@ fn start_menu() {
                 for (identifier, encrypted_password) in &password_map {
                     let password = decrypt(encrypted_password.password.clone(), &key);
                     // when there is a error in decrypting, the master password was unsolicitedly changed. in this case, delete all passwords and exit
-                    println!("{}({}): {} {}", identifier, encrypted_password.id, encrypted_password.username, String::from_utf8(password).unwrap_or_else(|_| {password_error(); String::from("Error")}));
+                    println!(
+                        "{}({}): {} {}",
+                        identifier,
+                        encrypted_password.id,
+                        encrypted_password.username,
+                        String::from_utf8(password).unwrap_or_else(|_| {
+                            password_error();
+                            String::from("Error")
+                        })
+                    );
                 }
             }
             "2" => {
@@ -378,23 +408,27 @@ fn start_menu() {
 
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() == 0 {
+    let matches = Command::new("muffon-encryptor")
+        .about("Encrption CLI for Muffon")
+        .subcommand_required(false)
+        .arg_required_else_help(false)
+        .allow_external_subcommands(true)
+        .arg(
+            Arg::new("setMasterPassword")
+                .short('s')
+                .long("setMasterPassword")
+                .help("Set the master password")
+                .num_args(0..=1) // if it is 0 then it will execute the argument even if it is not there
+        )
+        .get_matches();
+
+    if matches.contains_id("setMasterPassword") {
+        reset_master_password();
+    } else {
         if !is_master_password_set() {
             println!("No master password set. Please set one using the --setMasterPassword flag.");
         } else {
             start_menu();
-        }
-    } else {
-        if args.contains(&"--setMasterPassword".to_string()) {
-            reset_master_password();
-        } else if args.contains(&"--help".to_string()) {
-            println!("Usage: muffon-encryptor [OPTION]...");
-            println!("Options:");
-            println!("--setMasterPassword\t\tSet the master password");
-            println!("--help\t\t\t\tShow this help message");
-        } else {
-            println!("Invalid options. Use --help for more information.");
         }
     }
 }
