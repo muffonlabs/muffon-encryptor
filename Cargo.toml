@@ -7,8 +7,13 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-bcrypt = "0.14.0"
+bcrypt = "0.15.0"
 env_logger = "0.10.0"
 log = "0.4.20"
 directories = "5.0.1"
 rpassword = "7.2.0"
+ring = "0.17.4"
+aes-gcm = "0.10.3"
+base64 = "0.21.4"
+hex = "0.4.3"
+clap = "4.4.6"
