@@ -109,43 +109,9 @@ fn reset_master_password() {
         let key = derive_key(&old_master_password, &salt);
         let new_key = derive_key(&new_password, &salt);
         let passwords_path = get_passwords_file_path();
-        let mut file = File::open(&passwords_path).expect("file not found");
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)
-            .expect("something went wrong reading the file");
-        let lines = contents.split("\n");
         // create a hashmap of passwords using the old master password
-        let mut password_map: HashMap<String, Password> = HashMap::new();
-        for line in lines {
-            let line = line.trim();
-            if line.is_empty() {
-                continue;
-            }
-            let mut split = line.split(": ");
-            let identifier = split.next().unwrap();
-            let id = split.next().unwrap();
-            let username = split.next().unwrap();
-            let password = split.next().unwrap();
-            let nonce = split.next().unwrap();
-            let password = password.trim();
-            let nonce = nonce.trim();
-            let password = general_purpose::STANDARD_NO_PAD
-                .decode(password.as_bytes())
-                .unwrap();
-            let nonce = hex::decode(nonce).unwrap();
-            let encrypted_password = Block {
-                data: password,
-                nonce,
-            };
-            password_map.insert(
-                identifier.to_string(),
-                Password {
-                    id: id.parse::<u32>().unwrap(),
-                    username: username.to_string(),
-                    password: encrypted_password,
-                },
-            );
-        }
+        let password_map: HashMap<String, Password> = get_passwords();
+
         // decrypt and encrypt the passwords with the new master password
         let mut new_password_map: HashMap<String, Password> = HashMap::new();
         for (identifier, encrypted_password) in &password_map {
@@ -184,6 +150,47 @@ fn reset_master_password() {
         }
         println!("Passwords migrated successfully!");
     }
+}
+
+fn get_passwords() -> HashMap<String, Password> {
+    let passwords_path = get_passwords_file_path();
+    let mut file = File::open(&passwords_path).expect("file not found");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .expect("something went wrong reading the file");
+    let lines = contents.split("\n");
+    let mut password_map: HashMap<String, Password> = HashMap::new();
+    for line in lines {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut split = line.split(": ");
+        let identifier = split.next().unwrap_or_else(|| {  password_error();"2" }); //fixed the error where if the file was tamperd with the programm crashes.
+        let id = split.next().unwrap_or_else(|| {  password_error();"2" }); //TODO: Better error handling this is quick and dirty fix.
+        let username = split.next().unwrap_or_else(|| {  password_error();"2" }); // TODO: GET THAT 2 AWAY SOME HOW PLS.
+        let password = split.next().unwrap_or_else(|| {  password_error();"2" });
+        let nonce = split.next().unwrap_or_else(|| {  password_error();"2" });// now if file is tampered with it will be deleted
+        let password = password.trim();
+        let nonce = nonce.trim();
+        let password = general_purpose::STANDARD_NO_PAD
+            .decode(password.as_bytes())
+            .unwrap();
+        let nonce = hex::decode(nonce).unwrap();
+        let encrypted_password = Block {
+            data: password,
+            nonce,
+        };
+        password_map.insert(
+            identifier.to_string(),
+            Password {
+                id: id.parse::<u32>().unwrap(),
+                username: username.to_string(),
+                password: encrypted_password,
+            },
+        );
+    }
+    password_map
 }
 
 #[derive(Clone)]
@@ -360,42 +367,7 @@ fn start_menu() {
             }
             "4" => {
                 println!("Reading passwords from file...");
-                let passwords_path = get_passwords_file_path();
-                let mut file = File::open(&passwords_path).expect("file not found");
-                let mut contents = String::new();
-                file.read_to_string(&mut contents)
-                    .expect("something went wrong reading the file");
-                let lines = contents.split("\n");
-                for line in lines {
-                    let line = line.trim();
-                    if line.is_empty() {
-                        continue;
-                    }
-                    let mut split = line.split(": ");
-                    let identifier = split.next().unwrap_or_else(|| {  password_error();"2" }); //fixed the error where if the file was tamperd with the programm crashes.
-                    let id = split.next().unwrap_or_else(|| {  password_error();"2" }); //TODO: Better error handling this is quick and dirty fix.
-                    let username = split.next().unwrap_or_else(|| {  password_error();"2" }); // TODO: GET THAT 2 AWAY SOME HOW PLS.
-                    let password = split.next().unwrap_or_else(|| {  password_error();"2" });
-                    let nonce = split.next().unwrap_or_else(|| {  password_error();"2" });// now if file is tampered with it will be deleted
-                    let password = password.trim();
-                    let nonce = nonce.trim();
-                    let password = general_purpose::STANDARD_NO_PAD
-                        .decode(password.as_bytes())
-                        .unwrap();
-                    let nonce = hex::decode(nonce).unwrap();
-                    let encrypted_password = Block {
-                        data: password,
-                        nonce,
-                    };
-                    password_map.insert(
-                        identifier.to_string(),
-                        Password {
-                            id: id.parse::<u32>().unwrap(),
-                            username: username.to_string(),
-                            password: encrypted_password,
-                        },
-                    );
-                }
+                password_map = get_passwords();
             }
             "5" => {
                 println!("Goodbye!");
