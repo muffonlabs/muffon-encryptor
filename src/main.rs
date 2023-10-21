@@ -409,7 +409,7 @@ fn start_menu() {
 #[tokio::main]
 async fn main() {
     let matches = Command::new("muffon-encryptor")
-        .about("Encrption CLI for Muffon")
+        .about("Encryption CLI for Muffon")
         .subcommand_required(false)
         .arg_required_else_help(false)
         .allow_external_subcommands(true)
