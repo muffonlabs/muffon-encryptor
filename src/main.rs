@@ -89,6 +89,9 @@ fn reset_master_password() {
         } else {
             println!("Master password correct! You're in!");
         }
+    } else {
+        println!("No master password set. Setting one now. Passwords file will be reset.");
+        delete_password_files().ok();
     }
     // continue with setting the new master password
     println!("New master password: ");
