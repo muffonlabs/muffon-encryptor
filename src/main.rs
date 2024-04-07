@@ -52,7 +52,7 @@ fn is_master_password_set() -> bool {
         let mut contents = String::new();
         file.read_to_string(&mut contents)
             .expect("something went wrong reading the file");
-        return !contents.is_empty();
+        !contents.is_empty()
     } else {
         delete_password_files().ok();
         false
@@ -70,8 +70,8 @@ fn validate_master_password(password: &str) -> bool {
 
 fn get_master_password(prompt: &str) -> String {
     println!("{}", prompt);
-    let current_password = rpassword::read_password().unwrap();
-    current_password
+    
+    rpassword::read_password().unwrap()
 }
 
 fn reset_master_password() {
@@ -128,7 +128,7 @@ fn reset_master_password() {
             );
         }
         // overwrite the old passwords file with the new passwords
-        let mut file = File::create(&passwords_path).expect("Unable to create file while migrating passwords");
+        let mut file = File::create(passwords_path).expect("Unable to create file while migrating passwords");
         for (identifier, encrypted_password) in &new_password_map {
             let enc_base64 = general_purpose::STANDARD_NO_PAD
                 .encode(encrypted_password.password.data.as_slice());
@@ -155,11 +155,11 @@ fn reset_master_password() {
 
 fn get_passwords() -> HashMap<String, Password> {
     let passwords_path = get_passwords_file_path();
-    let mut file = File::open(&passwords_path).expect("file not found");
+    let mut file = File::open(passwords_path).expect("file not found");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
-    let lines = contents.split("\n");
+    let lines = contents.split('\n');
     let mut password_map: HashMap<String, Password> = HashMap::new();
     for line in lines {
         let line = line.trim();
@@ -223,23 +223,23 @@ struct Password {
 
 fn encrypt(data: &[u8], key_byte: &[u8]) -> Block {
     let key: &Key<Aes256Gcm> = key_byte.into();
-    let cipher = Aes256Gcm::new(&key);
+    let cipher = Aes256Gcm::new(key);
 
     let nonce = Aes256Gcm::generate_nonce(OsRng);
 
-    let encrypted_data = match cipher.encrypt(&nonce, data) {
+    
+    match cipher.encrypt(&nonce, data) {
         Ok(encrpted) => {
-            let e = Block {
+            
+            Block {
                 data: encrpted,
                 nonce: nonce.to_vec(),
-            };
-            e
+            }
         }
         Err(err) => {
             panic!("could not encrypt data: {:?}", err);
         }
-    };
-    encrypted_data
+    }
 }
 
 fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
@@ -247,7 +247,7 @@ fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
     let nonce = encrypted_data.nonce;
     let data = encrypted_data.data;
 
-    let cipher = Aes256Gcm::new(&key);
+    let cipher = Aes256Gcm::new(key);
     let op = cipher
         .decrypt(GenericArray::from_slice(&nonce), data.as_slice())
         .unwrap_or_else(|_| {
@@ -259,7 +259,7 @@ fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
 
 fn determine_id(hmap: &HashMap<String, Password>) -> u32 {
     let mut id = 0;
-    for (_, password) in hmap {
+    for password in hmap.values() {
         if password.id > id {
             id = password.id;
         }
@@ -270,7 +270,7 @@ fn determine_id(hmap: &HashMap<String, Password>) -> u32 {
 fn start_menu() {
     let master_password_path = get_master_password_file_path();
     let input_master_password = get_master_password("Master password: ");
-    let contents = std::fs::read_to_string(&master_password_path).unwrap();
+    let contents = std::fs::read_to_string(master_password_path).unwrap();
     let master_correct = verify_master_password(&input_master_password, &contents);
     if !master_correct {
         println!("Incorrect master password. Please try again.");
@@ -294,7 +294,7 @@ fn start_menu() {
         println!("1. List passwords and secrets");
         println!("2. Add a new password/secret");
         println!("3. Delete a password/secret");
-        println!("4. Import passwords from file");
+        println!("4. Import passwords from file (overwrites current passwords)");
         println!("5. Exit");
         let mut input = String::new();
         stdin.read_line(&mut input).expect("Failed to read line");
@@ -424,11 +424,9 @@ async fn main() {
 
     if matches.contains_id("setMasterPassword") {
         reset_master_password();
+    } else if !is_master_password_set() {
+        println!("No master password set. Please set one using the --setMasterPassword flag.");
     } else {
-        if !is_master_password_set() {
-            println!("No master password set. Please set one using the --setMasterPassword flag.");
-        } else {
-            start_menu();
-        }
+        start_menu();
     }
 }
