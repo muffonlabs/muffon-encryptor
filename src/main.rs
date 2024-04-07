@@ -167,26 +167,36 @@ fn get_passwords() -> HashMap<String, Password> {
             continue;
         }
         let mut split = line.split(": ");
-        let identifier = split.next().unwrap_or_else(|| {
+        let identifier = if let Some(id) = split.next() {
+            id
+        } else {
             password_error();
             "Error"
-        }); //fixed the error where if the file was tamperd with the programm crashes.
-        let id = split.next().unwrap_or_else(|| {
+        };
+        let id = if let Some(ids) = split.next() {
+            ids
+        } else {
             password_error();
             "Error"
-        });
-        let username = split.next().unwrap_or_else(|| {
+        };
+        let username = if let Some(user) = split.next() {
+            user
+        } else {
             password_error();
             "Error"
-        });
-        let password = split.next().unwrap_or_else(|| {
+        };
+        let password = if let Some(pass) = split.next() {
+            pass
+        } else {
             password_error();
             "Error"
-        });
-        let nonce = split.next().unwrap_or_else(|| {
+        };
+        let nonce = if let Some(nonce) = split.next() {
+            nonce
+        } else {
             password_error();
             "Error"
-        }); // now if file is tampered with it will be deleted
+        };
         let password = password.trim();
         let nonce = nonce.trim();
         let password = general_purpose::STANDARD_NO_PAD
@@ -249,12 +259,13 @@ fn decrypt(encrypted_data: Block, password_byte: &[u8]) -> Vec<u8> {
 
     let cipher = Aes256Gcm::new(key);
     let op = cipher
-        .decrypt(GenericArray::from_slice(&nonce), data.as_slice())
-        .unwrap_or_else(|_| {
-            password_error();
-            vec![]
-        }); //TODO: GET THAT VECTOR AWAY SOME HOW PLS.
-    op
+        .decrypt(GenericArray::from_slice(&nonce), data.as_slice());
+    if let Ok(decrypted) = op {
+        decrypted
+    } else {
+        password_error();
+        vec![]
+    }
 }
 
 fn determine_id(hmap: &HashMap<String, Password>) -> u32 {
@@ -339,10 +350,12 @@ fn start_menu() {
                         identifier,
                         encrypted_password.id,
                         encrypted_password.username,
-                        String::from_utf8(password).unwrap_or_else(|_| {
+                        if let Ok(password) = String::from_utf8(password) {
+                            password
+                        } else {
                             password_error();
-                            String::from("Error")
-                        })
+                            "".to_string()
+                        }
                     );
                 }
             }
